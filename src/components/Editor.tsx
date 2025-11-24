@@ -123,8 +123,10 @@ export const Editor: React.FC<EditorProps> = ({
   };
 
   const handleChatKeyDown = async (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
+    if (e.key === "Enter" || e.key === "Send" || e.keyCode === 13) {
       e.preventDefault();
+      e.stopPropagation();
+
       const baseText = chatInput.trim();
       if (!baseText) return;
 
@@ -331,13 +333,13 @@ export const Editor: React.FC<EditorProps> = ({
             value={chatInput}
             onChange={(e) => handleChatInputChange(e.target.value)}
             onKeyDown={handleChatKeyDown}
-            placeholder={
-              replyTarget
-                ? `replying to "${replyTarget.content.slice(0, 24)}..." `
-                : "type hidden message and press Enter"
-            }
+            placeholder={replyTarget ? `replying to "${replyTarget.content.slice(0, 24)}..." ` : "type hidden message and press Enter"}
             spellCheck={false}
+            enterKeyHint="send"
+            autoCorrect="off"
+            autoCapitalize="none"
           />
+
         </div>
         {typingLine && (
           <div className="chat-typing-line">
