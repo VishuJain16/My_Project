@@ -1,0 +1,616 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+}
+
+body {
+  background-color: #1e1e1e;
+  color: #d4d4d4;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.app-root {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Top bar */
+.top-bar {
+  height: 30px;
+  background: #3c3c3c;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  font-size: 12px;
+}
+
+/* Main layout */
+.main-area {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* Activity bar (left icons) */
+.activity-bar {
+  width: 40px;
+  background: #333333;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 6px;
+  gap: 8px;
+}
+
+.activity-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  opacity: 0.6;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.activity-icon.active,
+.activity-icon:hover {
+  background: #094771;
+  opacity: 1;
+}
+
+/* Sidebar / Explorer */
+.sidebar {
+  width: 250px;
+  background: #252526;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid #333333;
+}
+
+.sidebar-header {
+  height: 26px;
+  padding: 4px 8px;
+  font-size: 11px;
+  color: #cccccc;
+  text-transform: uppercase;
+  border-bottom: 1px solid #333333;
+}
+
+.sidebar-tree {
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* Explorer */
+.explorer-root {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  font-size: 12px;
+}
+
+.explorer-workspace-header {
+  height: 24px;
+  padding: 4px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #333333;
+  color: #cccccc;
+}
+
+.explorer-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.explorer-action-btn {
+  background: transparent;
+  border: none;
+  color: #cccccc;
+  cursor: pointer;
+  padding: 0 4px;
+  font-size: 12px;
+}
+
+.explorer-action-btn:hover {
+  background: #3c3c3c;
+}
+
+.explorer-tree {
+  flex: 1;
+  padding-top: 4px;
+}
+
+.explorer-row {
+  height: 20px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.explorer-row:hover .explorer-label {
+  background: #2a2d2e;
+}
+
+.explorer-chevron {
+  width: 10px;
+  display: inline-block;
+  margin-right: 3px;
+}
+
+.explorer-icon {
+  width: 16px;
+  margin-right: 4px;
+}
+
+.explorer-label {
+  padding: 0 4px;
+  flex: 1;
+}
+
+.explorer-label-active {
+  background: #37373d;
+}
+
+/* Explorer context menu */
+.explorer-context-menu {
+  background: #252526;
+  border: 1px solid #3c3c3c;
+  min-width: 160px;
+  padding: 4px 0;
+}
+
+.explorer-context-item {
+  padding: 3px 12px;
+  font-size: 12px;
+  color: #f0f0f0;
+  cursor: pointer;
+}
+
+.explorer-context-item:hover {
+  background: #094771;
+}
+
+.explorer-context-item.disabled {
+  color: #888888;
+  cursor: default;
+}
+
+.explorer-context-item.disabled:hover {
+  background: transparent;
+}
+
+.explorer-context-separator {
+  height: 1px;
+  margin: 4px 0;
+  background: #3c3c3c;
+}
+
+/* Editor area */
+.editor-area {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  font-family: "Fira Code", Consolas, "Courier New", monospace;
+  font-size: 14px;
+}
+
+/* Tabs bar */
+.tabs-bar {
+  height: 30px;
+  background: #252526;
+  border-bottom: 1px solid #1e1e1e;
+  display: flex;
+  align-items: flex-end;
+  padding-left: 8px;
+  overflow-x: auto;
+}
+
+.tabs-bar::-webkit-scrollbar {
+  height: 0;
+}
+
+.tab-item {
+  display: flex;
+  align-items: center;
+  padding: 4px 10px;
+  margin-right: 1px;
+  background: #2d2d2d;
+  color: #cccccc;
+  font-size: 12px;
+  cursor: pointer;
+  border-top-left-radius: 3px;
+  border-top-right-radius: 3px;
+}
+
+.tab-item-active {
+  background: #1e1e1e;
+  border-top: 1px solid #007acc;
+  border-left: 1px solid #3c3c3c;
+  border-right: 1px solid #3c3c3c;
+  color: #ffffff;
+}
+
+.tab-icon {
+  margin-right: 6px;
+  font-size: 11px;
+}
+
+.tab-label {
+  white-space: nowrap;
+}
+
+.tab-close {
+  margin-left: 6px;
+  opacity: 0;
+  font-size: 11px;
+}
+
+.tab-item:hover .tab-close {
+  opacity: 1;
+}
+
+/* scrollable code area above terminal */
+.editor-main {
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-width: none; /* Firefox hide */
+}
+
+.editor-main::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+/* generic code look */
+.editor-area pre,
+.editor-area textarea,
+.editor-area .editor-code {
+  font-family: "Fira Code", Consolas, "Courier New", monospace;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.editor-container {
+  padding: 12px 16px;
+}
+
+.editor-empty {
+  padding: 12px 16px;
+  color: #808080;
+  font-size: 13px;
+}
+
+.editor-textarea {
+  width: 100%;
+  min-height: 400px;
+  background: #1e1e1e;
+  color: #d4d4d4;
+  border: none;
+  outline: none;
+  resize: none;
+}
+
+/* INLINE CHAT ZONE – looks like normal comments */
+.chat-inline {
+  margin: 4px 0;
+}
+
+.chat-inline-hidden {
+  opacity: 0.4;
+}
+
+.chat-inline-scroll {
+  max-height: 60px; /* ~3 lines */
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.chat-inline-scroll::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.chat-line {
+  position: relative;
+  font-family: "Fira Code", Consolas, "Courier New", monospace;
+  font-size: 14px;
+  line-height: 1.4;
+  color: #6a9955; /* comment green */
+  cursor: default;
+}
+
+.chat-line-text {
+  white-space: pre;
+}
+
+/* ✅ tooltip now fixed on right side of editor window, not clipped by chat scroll */
+.chat-line-tooltip {
+  position: fixed;
+  right: 24px;           /* right side of editor */
+  bottom: 80px;          /* above terminal/status bar area */
+  padding: 4px 6px;
+  background: #252526;
+  border: 1px solid #3c3c3c;
+  border-radius: 2px;
+  font-size: 11px;
+  color: #cccccc;
+  max-width: 260px;
+  white-space: normal;   /* allow wrapping */
+  opacity: 0;
+  pointer-events: none;
+  z-index: 20;
+}
+
+.chat-line:hover .chat-line-tooltip {
+  opacity: 1;
+}
+
+.chat-line-reply-indicator {
+  font-size: 11px;
+  color: #6a9955;
+}
+
+/* chat input */
+.chat-input-row {
+  display: flex;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.chat-input-prefix {
+  color: #6a9955;
+  margin-right: 4px;
+}
+
+.chat-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #d4d4d4;
+  font-family: "Fira Code", Consolas, "Courier New", monospace;
+  font-size: 13px;
+}
+
+.chat-input::placeholder {
+  color: #555555;
+}
+
+.chat-typing-line {
+  margin-top: 2px;
+  font-size: 12px;
+  color: #6a9955;
+}
+
+/* Terminal */
+.terminal-root {
+  background: #1e1e1e;
+  border-top: 1px solid #333;
+  display: flex;
+  flex-direction: column;
+  font-family: "Fira Code", Consolas, "Courier New", monospace;
+  font-size: 12px;
+}
+
+.terminal-resize-handle {
+  height: 4px;
+  cursor: row-resize;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.terminal-resize-grip {
+  width: 40px;
+  height: 2px;
+  border-radius: 999px;
+  background: #555;
+}
+
+.terminal-header {
+  height: 26px;
+  background: #252526;
+  border-bottom: 1px solid #333;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 6px;
+}
+
+.terminal-tabs {
+  display: flex;
+  gap: 4px;
+}
+
+.terminal-tab {
+  padding: 3px 8px;
+  font-size: 11px;
+  color: #cccccc;
+  text-transform: uppercase;
+}
+
+.terminal-tab-active {
+  background: #1e1e1e;
+  border-top: 1px solid #007acc;
+  border-left: 1px solid #333;
+  border-right: 1px solid #333;
+  color: #ffffff;
+}
+
+.terminal-header-actions {
+  display: flex;
+  gap: 6px;
+  font-size: 11px;
+  color: #cccccc;
+}
+
+.terminal-header-icon {
+  cursor: default;
+}
+
+.terminal-body {
+  flex: 1;
+  padding: 4px 6px;
+  overflow-y: auto;
+  background: #1e1e1e;
+  scrollbar-width: none;
+}
+
+.terminal-body::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.terminal-line {
+  color: #d4d4d4;
+  white-space: pre-wrap;
+}
+
+.terminal-line-green {
+  color: #4ec9b0;
+}
+
+.terminal-line-red {
+  color: #f48771;
+}
+
+.terminal-input-row {
+  display: flex;
+  align-items: center;
+  padding: 3px 6px;
+  border-top: 1px solid #333;
+}
+
+.terminal-prompt {
+  color: #569cd6;
+  margin-right: 4px;
+}
+
+.terminal-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #d4d4d4;
+  font-family: inherit;
+  font-size: 12px;
+}
+
+/* terminal footer */
+.terminal-footer {
+  height: 20px;
+  background: #2d2d2d;
+  color: #cccccc;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8px;
+}
+
+/* Status bar at very bottom */
+.status-bar {
+  height: 22px;
+  background: #007acc;
+  color: #ffffff;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8px;
+}
+
+.status-left,
+.status-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.status-segment {
+  padding: 0 4px;
+  border-left: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.status-left .status-segment:first-child,
+.status-right .status-segment:first-child {
+  border-left: none;
+}
+/* INLINE CHAT ZONE – looks like normal comments */
+.chat-inline {
+  margin: 4px 0;
+}
+
+.chat-inline-hidden {
+  opacity: 0.4;
+}
+
+.chat-inline-scroll {
+  max-height: 60px; /* ~3 lines */
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.chat-inline-scroll::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.chat-line {
+  position: relative;
+  font-family: "Fira Code", Consolas, "Courier New", monospace;
+  font-size: 14px;
+  line-height: 1.4;
+  color: #6a9955; /* comment green */
+  cursor: default;
+}
+
+.chat-line-timestamp {
+  color: #858585; /* slightly dimmer for separators */
+}
+
+.chat-line-text {
+  white-space: pre;
+}
+
+/* tooltip fixed at bottom-right of editor */
+.chat-line-tooltip {
+  position: fixed;
+  right: 24px;
+  bottom: 80px;
+  padding: 4px 6px;
+  background: #252526;
+  border: 1px solid #3c3c3c;
+  border-radius: 2px;
+  font-size: 11px;
+  color: #cccccc;
+  max-width: 260px;
+  white-space: normal;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 20;
+}
+
+.chat-line:hover .chat-line-tooltip {
+  opacity: 1;
+}
+
+.chat-line-reply-indicator {
+  font-size: 11px;
+  color: #6a9955;
+}
