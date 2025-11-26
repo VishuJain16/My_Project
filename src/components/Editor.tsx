@@ -61,13 +61,38 @@ export const Editor: React.FC<EditorProps> = ({
     };
   }, []);
 
-  // auto-scroll tiny chat window to bottom when messages change
+  // Always try to scroll the tiny chat window to bottom:
+  // - when messages change
+  // - and when the active file becomes the chat file (e.g. ncp run)
   useEffect(() => {
-    if (chatScrollRef.current) {
-      chatScrollRef.current.scrollTop =
-        chatScrollRef.current.scrollHeight;
-    }
-  }, [chatMessages.length]);
+    const doScroll = () => {
+      if (!chatScrollRef.current) return;
+      // smooth scroll small distance for UX; mobile/tablet safe
+      try {
+        chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
+      } catch {
+        // fallback to simple assignment
+        chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
+      }
+    };
+
+    // run on next paint to ensure DOM is updated (important for ncp run opening)
+    const raf = requestAnimationFrame(() => {
+      // double-frame to be extra safe on slow devices
+      const id = window.setTimeout(() => {
+        doScroll();
+      }, 40);
+      // cleanup the timeout if effect re-runs
+      (doScroll as any).__timeout = id;
+    });
+
+    // cleanup
+    return () => {
+      cancelAnimationFrame(raf);
+      const t = (doScroll as any).__timeout;
+      if (typeof t === "number") window.clearTimeout(t);
+    };
+  }, [chatMessages.length, activeFileId]);
 
   const handleChatInputChange = (value: string) => {
     setChatInput(value);
@@ -117,13 +142,13 @@ export const Editor: React.FC<EditorProps> = ({
   };
 
   const formatTimeSeparator = (d: Date): string => {
-    // same as formatTime but never null
     const s = formatTime(d);
     return s ?? "";
   };
 
   const handleChatKeyDown = async (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" || e.key === "Send" || e.keyCode === 13) {
+    // accept Enter/Send on all platforms and stop propagation so terminal doesn't steal focus
+    if (e.key === "Enter" || e.key === "Send" || (e as any).keyCode === 13) {
       e.preventDefault();
       e.stopPropagation();
 
@@ -206,9 +231,7 @@ export const Editor: React.FC<EditorProps> = ({
   const buildMarker = (m: ChatMessage): string => {
     if (!currentUser) return "#";
     if (isOwn(m)) {
-      const seenByOthers = (m.seenBy || []).some(
-        (u) => u !== currentUser
-      );
+      const seenByOthers = (m.seenBy || []).some((u) => u !== currentUser);
       return seenByOthers ? "##" : "#";
     } else {
       const seenHere = (m.seenBy || []).includes(currentUser);
@@ -254,8 +277,7 @@ export const Editor: React.FC<EditorProps> = ({
   const handleReplyDoubleClick = (m: ChatMessage) => {
     setReplyTarget(m);
     if (chatScrollRef.current) {
-      chatScrollRef.current.scrollTop =
-        chatScrollRef.current.scrollHeight;
+      chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
     }
     const input = document.querySelector<HTMLInputElement>(".chat-input");
     if (input) {
@@ -333,13 +355,16 @@ export const Editor: React.FC<EditorProps> = ({
             value={chatInput}
             onChange={(e) => handleChatInputChange(e.target.value)}
             onKeyDown={handleChatKeyDown}
-            placeholder={replyTarget ? `replying to "${replyTarget.content.slice(0, 24)}..." ` : "type hidden message and press Enter"}
+            placeholder={
+              replyTarget
+                ? `replying to "${replyTarget.content.slice(0, 24)}..." `
+                : "type hidden message and press Enter"
+            }
             spellCheck={false}
             enterKeyHint="send"
             autoCorrect="off"
             autoCapitalize="none"
           />
-
         </div>
         {typingLine && (
           <div className="chat-typing-line">
