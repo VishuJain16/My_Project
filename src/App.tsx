@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
-import { Explorer,type FileNode } from "./components/Explorer";
+import { Explorer, type FileNode } from "./components/Explorer";
 import { Editor } from "./components/Editor";
-import { Terminal,type  TerminalLine } from "./components/Terminal";
+import { Terminal, type TerminalLine } from "./components/Terminal";
 import { v4 as uuidv4 } from "uuid";
 import { db } from "./firebase";
 import {
@@ -15,6 +15,7 @@ import {
   setDoc,
   updateDoc,
   arrayUnion,
+  deleteDoc,
 } from "firebase/firestore";
 import { FirebaseError } from "firebase/app";
 
@@ -881,6 +882,89 @@ ${CHAT_END}
     setUnsubscribePresence(() => unsub);
   };
 
+  // --- NEW: subscribe to "rings" collection for push-like notifications ---
+    const [unsubscribeRings, setUnsubscribeRings] =
+    useState<null | (() => void)>(null);
+
+    const subscribeToRings = (roomId: string, currentUser: string) => {
+    // unsubscribe previous if any
+    if (unsubscribeRings) {
+      try {
+        unsubscribeRings();
+      } catch {
+        /* ignore */
+      }
+      setUnsubscribeRings(null);
+    }
+
+    const ringsCol = collection(db, "rooms", roomId, "rings");
+    const q = query(ringsCol, orderBy("createdAt", "asc"));
+
+    const unsub = onSnapshot(q, (snapshot) => {
+      snapshot.docChanges().forEach((change) => {
+        if (change.type !== "added") return;
+        const docSnap = change.doc;
+        const data = docSnap.data() as any;
+        const sender = data.sender as string | undefined;
+        const createdAt = toJsDate(data.createdAt);
+
+        // ignore rings from ourselves (but still cleanup)
+        if (!sender || sender === currentUser) {
+          deleteDoc(doc(db, "rooms", roomId, "rings", docSnap.id)).catch(
+            () => undefined
+          );
+          return;
+        }
+
+        // ignore older rings (avoid initial snapshot firing old docs)
+        if (createdAt) {
+          const ageMs = Date.now() - createdAt.getTime();
+          if (ageMs > 5000) {
+            // older than 5s -> treat as historical; just delete and skip notifying
+            deleteDoc(doc(db, "rooms", roomId, "rings", docSnap.id)).catch(
+              () => undefined
+            );
+            return;
+          }
+        }
+
+        // show a desktop/mobile notification (no content)
+        try {
+          if (
+            typeof Notification !== "undefined" &&
+            Notification.permission === "granted"
+          ) {
+            new Notification("Check out this new version of visual studio code");
+          } else {
+            // fallback terminal cue
+            appendTerminalLine(
+              `ring: ${sender} triggered a notification`,
+              "green"
+            );
+          }
+        } catch (err) {
+          appendTerminalLine(
+            `ring: ${sender} triggered a notification`,
+            "green"
+          );
+        }
+
+        appendTerminalLine(`ring received from ${sender}`, "default");
+
+        // remove the ring doc to keep collection clean
+        deleteDoc(doc(db, "rooms", roomId, "rings", docSnap.id)).catch(
+          () => undefined
+        );
+      });
+    });
+
+    // store unsubscribe so we won't create duplicates later
+    setUnsubscribeRings(() => unsub);
+    return unsub;
+  };
+
+  // --- end rings subscription ---
+
   const setPresenceStatus = async (
     roomId: string,
     userName: string,
@@ -1016,6 +1100,11 @@ ${CHAT_END}
       ensureChatFile();
       subscribeToMessages(roomId, userName);
       subscribeToPresence(roomId, userName);
+      // subscribe to rings and request permission
+      subscribeToRings(roomId, userName);
+      if (typeof Notification !== "undefined" && Notification.permission !== "granted") {
+        Notification.requestPermission().catch(() => undefined);
+      }
       setOnlinePresence(roomId, userName).catch(() => undefined);
     } catch (err) {
       console.error("auto-login failed", err);
@@ -1140,6 +1229,7 @@ ${CHAT_END}
       appendTerminalLine("  git status", "default");
       appendTerminalLine("  npm run dev", "default");
       appendTerminalLine("  flutter run", "default");
+      appendTerminalLine("  ring (notify other users)", "default");
       return;
     }
 
@@ -1218,6 +1308,11 @@ ${CHAT_END}
       ensureChatFile();
       subscribeToMessages(roomId, userName);
       subscribeToPresence(roomId, userName);
+      // subscribe to rings and request permission
+      subscribeToRings(roomId, userName);
+      if (typeof Notification !== "undefined" && Notification.permission !== "granted") {
+        Notification.requestPermission().catch(() => undefined);
+      }
       await setOnlinePresence(roomId, userName).catch(() => undefined);
       return;
     }
@@ -1307,6 +1402,26 @@ ${CHAT_END}
         return;
       }
       await handleSendChat(msgText);
+      return;
+    }
+
+    // NEW: ring command - notify other users with a short push-like notification (no message content)
+    if (cmd === "ring") {
+      if (!login.loggedIn || !login.roomId || !login.userName) {
+        appendTerminalLine("error: not logged in", "red");
+        return;
+      }
+      try {
+        const ringsCol = collection(db, "rooms", login.roomId, "rings");
+        await addDoc(ringsCol, {
+          sender: login.userName,
+          createdAt: serverTimestamp(),
+        });
+        appendTerminalLine("ring sent", "green");
+      } catch (err) {
+        appendTerminalLine("failed to send ring", "red");
+        console.error("ring send failed", err);
+      }
       return;
     }
 
